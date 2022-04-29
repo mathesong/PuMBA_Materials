@@ -269,8 +269,8 @@ library(lmerTest)
 theme_set(theme_light())
 set.seed(555)</code></pre>
 </div>
-<div id="tac-data-2tc" class="section level1">
-<h1>TAC Data: 2TC</h1>
+<div id="tac-data-2tc-11cway100635" class="section level1">
+<h1>TAC Data: 2TC [11C]WAY100635</h1>
 <p>I will first demonstrate the use of PuMBA using a simulated dataset taken from our first paper on these types of models, called SiMBA. The dataset comes from <a href="https://github.com/mathesong/SiMBA_Materials">here</a>.</p>
 <div id="exploring-the-data" class="section level2">
 <h2>Exploring the data</h2>
@@ -1471,17 +1471,25 @@ pumba_formula &lt;- brms::mvbrmsformula(bf_K1 + bf_Vnd + bf_BPp + bf_k4 + set_re
 
 \
 
+|
+
+/
+
+-
+
+\
+
  
 Running MCMC with 4 parallel chains...
 ## 
-## Chain 1 finished in 10.4 seconds.
-## Chain 2 finished in 10.7 seconds.
-## Chain 4 finished in 10.6 seconds.
-## Chain 3 finished in 10.8 seconds.
+## Chain 1 finished in 10.7 seconds.
+## Chain 3 finished in 10.7 seconds.
+## Chain 2 finished in 10.9 seconds.
+## Chain 4 finished in 10.8 seconds.
 ## 
 ## All 4 chains finished successfully.
-## Mean chain execution time: 10.6 seconds.
-## Total execution time: 10.9 seconds.</code></pre>
+## Mean chain execution time: 10.8 seconds.
+## Total execution time: 11.0 seconds.</code></pre>
 <pre class="r"><code>pumba_fit</code></pre>
 <pre><code>##  Family: MV(gaussian, gaussian, gaussian, gaussian) 
 ##   Links: mu = identity; sigma = identity

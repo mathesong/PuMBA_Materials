@@ -34,7 +34,7 @@ set.seed(555)
 ```
 
 
-# TAC Data: 2TC
+# TAC Data: 2TC [11C]WAY100635
 
 I will first demonstrate the use of PuMBA using a simulated dataset taken from our first paper on these types of models, called SiMBA.  The dataset comes from [here](https://github.com/mathesong/SiMBA_Materials).
 

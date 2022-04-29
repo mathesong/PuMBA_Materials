@@ -3,7 +3,7 @@ PuMBA Demonstration
 
 -   [Aims](#aims)
 -   [Libraries](#libraries)
--   [TAC Data: 2TC](#tac-data-2tc)
+-   [TAC Data: 2TC \[11C\]WAY100635](#tac-data-2tc-11cway100635)
     -   [Exploring the data](#exploring-the-data)
         -   [Loading](#loading)
         -   [Measured Data](#measured-data)
@@ -43,7 +43,7 @@ theme_set(theme_light())
 set.seed(555)
 ```
 
-# TAC Data: 2TC
+# TAC Data: 2TC \[11C\]WAY100635
 
 I will first demonstrate the use of PuMBA using a simulated dataset
 taken from our first paper on these types of models, called SiMBA. The
@@ -775,16 +775,16 @@ pumba_fit <- brm(pumba_formula,
 
     ## Compiling Stan program...
 
-    ## -\|/-\|/-\|/-\|/-\|/-\|/-\|/-\|/-\|/-\|/-\|/-\|/-\|/-\|/-\|/-\|/-\|/-\|/-\|/-\|/-\|/-\|/-\|/-\|/-\|/-\|/-\|/-\|/-\|/-\|/-\|/-\|/-\| Running MCMC with 4 parallel chains...
+    ## -\|/-\|/-\|/-\|/-\|/-\|/-\|/-\|/-\|/-\|/-\|/-\|/-\|/-\|/-\|/-\|/-\|/-\|/-\|/-\|/-\|/-\|/-\|/-\|/-\|/-\|/-\|/-\|/-\|/-\|/-\|/-\|/-\ Running MCMC with 4 parallel chains...
     ## 
-    ## Chain 1 finished in 10.8 seconds.
-    ## Chain 2 finished in 11.0 seconds.
-    ## Chain 4 finished in 10.9 seconds.
-    ## Chain 3 finished in 11.1 seconds.
+    ## Chain 1 finished in 10.5 seconds.
+    ## Chain 3 finished in 10.6 seconds.
+    ## Chain 2 finished in 10.7 seconds.
+    ## Chain 4 finished in 10.7 seconds.
     ## 
     ## All 4 chains finished successfully.
-    ## Mean chain execution time: 10.9 seconds.
-    ## Total execution time: 11.2 seconds.
+    ## Mean chain execution time: 10.6 seconds.
+    ## Total execution time: 11.0 seconds.
 
 ``` r
 pumba_fit
