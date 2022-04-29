@@ -1,4 +1,4 @@
-# SiMBA Materials
+# PuMBA Materials
 
 This repository contains the materials for our manuscript:
 
