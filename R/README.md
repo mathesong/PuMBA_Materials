@@ -161,7 +161,7 @@ subjdat %>%
        y = "Radioactivity")
 ```
 
-![](PuMBA_Demonstration_files/figure-gfm/unnamed-chunk-112-1.png)<!-- -->
+![](PuMBA_Demonstration_files/figure-gfm/unnamed-chunk-4-1.png)<!-- -->
 
 #### Arterial Input function
 
@@ -203,7 +203,7 @@ ggplot(AIFdat, aes(x=time, y=AIF)) +
   geom_line(colour="red")
 ```
 
-![](PuMBA_Demonstration_files/figure-gfm/unnamed-chunk-113-1.png)<!-- -->
+![](PuMBA_Demonstration_files/figure-gfm/unnamed-chunk-5-1.png)<!-- -->
 
 So now, we can show the AIF and the TAC together.
 
@@ -221,7 +221,7 @@ subjdat %>%
   coord_cartesian(ylim = c(-0.02, 0.3))
 ```
 
-![](PuMBA_Demonstration_files/figure-gfm/unnamed-chunk-114-1.png)<!-- -->
+![](PuMBA_Demonstration_files/figure-gfm/unnamed-chunk-6-1.png)<!-- -->
 
 #### Whole Blood
 
@@ -243,7 +243,7 @@ ggplot(subjdat, aes(x=t_tac, y=TAC)) +
        y = "Radioactivity")
 ```
 
-![](PuMBA_Demonstration_files/figure-gfm/unnamed-chunk-115-1.png)<!-- -->
+![](PuMBA_Demonstration_files/figure-gfm/unnamed-chunk-7-1.png)<!-- -->
 
 ### Simulation Data
 
@@ -268,7 +268,7 @@ subjdat %>%
        subtitle="Measurement error as a percentage of the mean value across the PET measurement")
 ```
 
-![](PuMBA_Demonstration_files/figure-gfm/unnamed-chunk-116-1.png)<!-- -->
+![](PuMBA_Demonstration_files/figure-gfm/unnamed-chunk-8-1.png)<!-- -->
 
 This function is partially related to the durations of the frames, but
 not completely.
@@ -283,7 +283,7 @@ ggplot(data=subjdat, aes(x=t_tac, y=durations)) +
        subtitle="Frame durations over the course of the PET measurement")
 ```
 
-![](PuMBA_Demonstration_files/figure-gfm/unnamed-chunk-117-1.png)<!-- -->
+![](PuMBA_Demonstration_files/figure-gfm/unnamed-chunk-9-1.png)<!-- -->
 
 The true sigma at each point in time is taken from the addition of the
 true sigma for each ROI and individual, `sigma_true`, and adding
@@ -306,7 +306,7 @@ subjdat %>%
        y = "Radioactivity")
 ```
 
-![](PuMBA_Demonstration_files/figure-gfm/unnamed-chunk-118-1.png)<!-- -->
+![](PuMBA_Demonstration_files/figure-gfm/unnamed-chunk-10-1.png)<!-- -->
 
 #### Parameters by Region
 
@@ -342,7 +342,7 @@ ggplot(pardat, aes(x=Value, colour=Region, fill=Region)) +
 
     ## `stat_bin()` using `bins = 30`. Pick better value with `binwidth`.
 
-![](PuMBA_Demonstration_files/figure-gfm/unnamed-chunk-120-1.png)<!-- -->
+![](PuMBA_Demonstration_files/figure-gfm/unnamed-chunk-12-1.png)<!-- -->
 
 Note the regions are as follows:
 
@@ -377,7 +377,7 @@ ggplot(parroidat, aes(x=Group, y=Value, colour=Group, fill=Group)) +
   facet_wrap(~Parameter, scales="free")
 ```
 
-![](PuMBA_Demonstration_files/figure-gfm/unnamed-chunk-122-1.png)<!-- -->
+![](PuMBA_Demonstration_files/figure-gfm/unnamed-chunk-14-1.png)<!-- -->
 
 This really speaks to the difficulty of sampling variation… Really hard
 to see anything at all there in BP<sub>ND</sub> in this particular
@@ -532,7 +532,7 @@ ggplot(nls_simres, aes(x=logBPp_true, y=logbpp, colour=Region)) +
 
     ## `geom_smooth()` using formula 'y ~ x'
 
-![](PuMBA_Demonstration_files/figure-gfm/unnamed-chunk-128-1.png)<!-- -->
+![](PuMBA_Demonstration_files/figure-gfm/unnamed-chunk-20-1.png)<!-- -->
 
 ``` r
 nls_simres %>% 
@@ -564,7 +564,7 @@ ggplot(nls_simres, aes(x=logBPnd_true, y=logbpnd, colour=Region)) +
 
     ## `geom_smooth()` using formula 'y ~ x'
 
-![](PuMBA_Demonstration_files/figure-gfm/unnamed-chunk-129-1.png)<!-- -->
+![](PuMBA_Demonstration_files/figure-gfm/unnamed-chunk-21-1.png)<!-- -->
 
 ``` r
 nls_simres %>% 
@@ -632,7 +632,7 @@ ggplot(nls_simres_t_bpp, aes(x=Region, y=estimate)) +
   coord_flip()
 ```
 
-![](PuMBA_Demonstration_files/figure-gfm/unnamed-chunk-130-1.png)<!-- -->
+![](PuMBA_Demonstration_files/figure-gfm/unnamed-chunk-22-1.png)<!-- -->
 
 These are mostly in the right direction, but the 95% CIs around the
 estimates are very wide indeed…
@@ -676,7 +676,8 @@ nls_simres_lme_bpp %>%
   coord_flip()
 ```
 
-![](PuMBA_Demonstration_files/figure-gfm/unnamed-chunk-131-1.png)<!-- -->
+![](PuMBA_Demonstration_files/figure-gfm/unnamed-chunk-23-1.png)<!-- -->
+
 This results in tigher confidence intervals, which is a good sign!
 
 ## PuMBA
@@ -768,21 +769,22 @@ pumba_fit <- brm(pumba_formula,
     prior = pumba_prior,
     backend = "cmdstanr", 
     inits = 0, cores=4, 
+    iter=4000,
     silent = 2, refresh=0)
 ```
 
     ## Compiling Stan program...
 
-    ## -\|/-\|/-\|/-\|/-\|/-\|/-\|/-\|/-\|/-\|/-\|/-\|/-\|/-\|/-\|/-\|/-\|/-\|/-\|/-\|/-\|/-\|/-\|/-\|/-\|/-\|/-\|/-\|/-\|/-\|/-\|/-\|/- Running MCMC with 4 parallel chains...
+    ## -\|/-\|/-\|/-\|/-\|/-\|/-\|/-\|/-\|/-\|/-\|/-\|/-\|/-\|/-\|/-\|/-\|/-\|/-\|/-\|/-\|/-\|/-\|/-\|/-\|/-\|/-\|/-\|/-\|/-\|/-\|/-\|/-\| Running MCMC with 4 parallel chains...
     ## 
-    ## Chain 1 finished in 6.1 seconds.
-    ## Chain 3 finished in 6.2 seconds.
-    ## Chain 4 finished in 6.2 seconds.
-    ## Chain 2 finished in 6.5 seconds.
+    ## Chain 1 finished in 10.8 seconds.
+    ## Chain 2 finished in 11.0 seconds.
+    ## Chain 4 finished in 10.9 seconds.
+    ## Chain 3 finished in 11.1 seconds.
     ## 
     ## All 4 chains finished successfully.
-    ## Mean chain execution time: 6.3 seconds.
-    ## Total execution time: 6.6 seconds.
+    ## Mean chain execution time: 10.9 seconds.
+    ## Total execution time: 11.2 seconds.
 
 ``` r
 pumba_fit
@@ -798,68 +800,68 @@ pumba_fit
     ##          logBPp ~ 1 + Region + Group + (1 | k | ID) 
     ##          logk4 ~ 1 + (1 | j | Region) + (1 | k | ID) 
     ##    Data: pumba_modeldat (Number of observations: 180) 
-    ##   Draws: 4 chains, each with iter = 1000; warmup = 0; thin = 1;
-    ##          total post-warmup draws = 4000
+    ##   Draws: 4 chains, each with iter = 2000; warmup = 0; thin = 1;
+    ##          total post-warmup draws = 8000
     ## 
     ## Group-Level Effects: 
     ## ~ID (Number of levels: 20) 
     ##                                        Estimate Est.Error l-95% CI u-95% CI Rhat Bulk_ESS Tail_ESS
-    ## sd(logK1_Intercept)                        0.32      0.05     0.23     0.44 1.00     1159     1900
-    ## sd(logVnd_Intercept)                       0.45      0.08     0.31     0.63 1.00     1806     2732
-    ## sd(logBPp_Intercept)                       0.34      0.06     0.24     0.47 1.00     1779     2510
-    ## sd(logk4_Intercept)                        0.10      0.06     0.00     0.21 1.01     1110     1105
-    ## cor(logK1_Intercept,logVnd_Intercept)      0.24      0.21    -0.20     0.61 1.00     1439     2193
-    ## cor(logK1_Intercept,logBPp_Intercept)      0.68      0.15     0.33     0.89 1.00     1496     2306
-    ## cor(logVnd_Intercept,logBPp_Intercept)     0.51      0.18     0.09     0.80 1.00     2024     2491
-    ## cor(logK1_Intercept,logk4_Intercept)      -0.29      0.34    -0.83     0.47 1.00     3370     2594
-    ## cor(logVnd_Intercept,logk4_Intercept)      0.16      0.36    -0.58     0.79 1.00     3905     2752
-    ## cor(logBPp_Intercept,logk4_Intercept)      0.03      0.34    -0.67     0.69 1.00     3737     2311
+    ## sd(logK1_Intercept)                        0.32      0.06     0.23     0.45 1.00     2603     3932
+    ## sd(logVnd_Intercept)                       0.45      0.08     0.32     0.64 1.00     4270     6181
+    ## sd(logBPp_Intercept)                       0.34      0.06     0.25     0.47 1.00     3781     5394
+    ## sd(logk4_Intercept)                        0.10      0.06     0.01     0.22 1.00     2538     2984
+    ## cor(logK1_Intercept,logVnd_Intercept)      0.24      0.21    -0.19     0.61 1.00     3011     4311
+    ## cor(logK1_Intercept,logBPp_Intercept)      0.68      0.14     0.34     0.89 1.00     3010     4692
+    ## cor(logVnd_Intercept,logBPp_Intercept)     0.52      0.18     0.12     0.81 1.00     4302     5388
+    ## cor(logK1_Intercept,logk4_Intercept)      -0.29      0.34    -0.82     0.50 1.00     6687     4368
+    ## cor(logVnd_Intercept,logk4_Intercept)      0.17      0.35    -0.57     0.78 1.00     7036     5559
+    ## cor(logBPp_Intercept,logk4_Intercept)      0.04      0.34    -0.64     0.70 1.00     7726     5452
     ## 
     ## ~Region (Number of levels: 9) 
     ##                                       Estimate Est.Error l-95% CI u-95% CI Rhat Bulk_ESS Tail_ESS
-    ## sd(logVnd_Intercept)                      0.11      0.06     0.01     0.23 1.00     1288      857
-    ## sd(logk4_Intercept)                       0.05      0.04     0.00     0.13 1.00     1854     1726
-    ## cor(logVnd_Intercept,logk4_Intercept)     0.11      0.44    -0.76     0.86 1.00     4109     2943
+    ## sd(logVnd_Intercept)                      0.11      0.06     0.01     0.23 1.00     2766     2282
+    ## sd(logk4_Intercept)                       0.05      0.04     0.00     0.13 1.00     4538     3893
+    ## cor(logVnd_Intercept,logk4_Intercept)     0.10      0.43    -0.76     0.84 1.00     9388     6063
     ## 
     ## Population-Level Effects: 
     ##                              Estimate Est.Error l-95% CI u-95% CI Rhat Bulk_ESS Tail_ESS
-    ## logK1_Intercept                 -2.37      0.08    -2.53    -2.22 1.01      984     1726
-    ## logK1_Regionmed                  0.05      0.08    -0.10     0.20 1.00     2166     2501
-    ## logK1_Regionhip                 -0.16      0.07    -0.30    -0.02 1.00     2274     2759
-    ## logK1_Regionamy                 -0.29      0.07    -0.44    -0.15 1.00     2475     2777
-    ## logK1_Regionpip                 -0.09      0.07    -0.23     0.06 1.00     2299     3119
-    ## logK1_Regionins                 -0.00      0.08    -0.15     0.15 1.00     2025     2395
-    ## logK1_Regionacn                  0.02      0.07    -0.12     0.17 1.00     2230     3008
-    ## logK1_Regioncin                  0.03      0.07    -0.11     0.17 1.00     2133     2824
-    ## logK1_RegionWAY_rphelpscs_c     -0.47      0.07    -0.62    -0.33 1.00     2301     3276
-    ## logVnd_Intercept                -0.76      0.11    -0.97    -0.55 1.00     1720     2336
-    ## logBPp_Intercept                 1.22      0.10     1.04     1.41 1.00     1466     2132
-    ## logBPp_Regionmed                 0.01      0.09    -0.17     0.19 1.00     2953     2958
-    ## logBPp_Regionhip                 0.37      0.09     0.19     0.56 1.00     3034     3096
-    ## logBPp_Regionamy                 0.09      0.09    -0.10     0.28 1.00     2891     2795
-    ## logBPp_Regionpip                 0.27      0.09     0.09     0.45 1.00     3089     2984
-    ## logBPp_Regionins                 0.37      0.09     0.18     0.55 1.00     2975     3131
-    ## logBPp_Regionacn                 0.10      0.09    -0.08     0.28 1.00     2636     2913
-    ## logBPp_Regioncin                -0.13      0.09    -0.32     0.05 1.00     2805     2760
-    ## logBPp_RegionWAY_rphelpscs_c    -0.19      0.09    -0.38     0.00 1.00     2940     3051
-    ## logBPp_GroupPatient              0.04      0.10    -0.15     0.24 1.00     2386     2749
-    ## logk4_Intercept                 -3.70      0.05    -3.80    -3.61 1.00     2927     2308
+    ## logK1_Intercept                 -2.37      0.08    -2.54    -2.21 1.00     1475     3047
+    ## logK1_Regionmed                  0.04      0.08    -0.10     0.19 1.00     4032     5839
+    ## logK1_Regionhip                 -0.16      0.07    -0.31    -0.02 1.00     4213     5641
+    ## logK1_Regionamy                 -0.29      0.07    -0.44    -0.15 1.00     4542     5969
+    ## logK1_Regionpip                 -0.09      0.08    -0.23     0.06 1.00     4725     5785
+    ## logK1_Regionins                 -0.00      0.08    -0.15     0.14 1.00     4285     5510
+    ## logK1_Regionacn                  0.02      0.07    -0.12     0.17 1.00     4675     5952
+    ## logK1_Regioncin                  0.03      0.07    -0.12     0.17 1.00     4327     5365
+    ## logK1_RegionWAY_rphelpscs_c     -0.47      0.07    -0.62    -0.33 1.00     4238     5723
+    ## logVnd_Intercept                -0.75      0.11    -0.97    -0.55 1.00     3198     4885
+    ## logBPp_Intercept                 1.22      0.10     1.02     1.41 1.00     2584     3856
+    ## logBPp_Regionmed                 0.01      0.09    -0.17     0.20 1.00     5164     5952
+    ## logBPp_Regionhip                 0.36      0.09     0.18     0.54 1.00     5196     5698
+    ## logBPp_Regionamy                 0.09      0.09    -0.09     0.27 1.00     5534     6046
+    ## logBPp_Regionpip                 0.27      0.09     0.09     0.45 1.00     5133     5236
+    ## logBPp_Regionins                 0.36      0.09     0.18     0.55 1.00     4801     6060
+    ## logBPp_Regionacn                 0.10      0.09    -0.09     0.28 1.00     5419     5917
+    ## logBPp_Regioncin                -0.13      0.09    -0.32     0.05 1.00     4667     5853
+    ## logBPp_RegionWAY_rphelpscs_c    -0.19      0.09    -0.37    -0.00 1.00     5393     5745
+    ## logBPp_GroupPatient              0.04      0.10    -0.14     0.24 1.00     4704     4926
+    ## logk4_Intercept                 -3.70      0.05    -3.80    -3.61 1.00     6667     5474
     ## 
     ## Family Specific Parameters: 
     ##              Estimate Est.Error l-95% CI u-95% CI Rhat Bulk_ESS Tail_ESS
-    ## sigma_logK1      0.30      0.02     0.27     0.33 1.00     4638     3210
-    ## sigma_logVnd     0.60      0.03     0.55     0.66 1.00     4130     3267
-    ## sigma_logBPp     0.35      0.02     0.31     0.38 1.00     4322     2987
-    ## sigma_logk4      0.47      0.02     0.43     0.52 1.00     4531     2798
+    ## sigma_logK1      0.30      0.02     0.27     0.33 1.00     7920     5818
+    ## sigma_logVnd     0.60      0.03     0.55     0.66 1.00     8766     6664
+    ## sigma_logBPp     0.35      0.02     0.31     0.39 1.00     9405     5304
+    ## sigma_logk4      0.47      0.02     0.43     0.52 1.00     9490     6399
     ## 
     ## Residual Correlations: 
     ##                       Estimate Est.Error l-95% CI u-95% CI Rhat Bulk_ESS Tail_ESS
-    ## rescor(logK1,logVnd)     -0.51      0.05    -0.60    -0.40 1.00     4269     3020
-    ## rescor(logK1,logBPp)     -0.11      0.07    -0.25     0.03 1.00     4886     3100
-    ## rescor(logVnd,logBPp)    -0.09      0.07    -0.23     0.04 1.00     5419     2937
-    ## rescor(logK1,logk4)      -0.34      0.06    -0.45    -0.21 1.00     4543     3516
-    ## rescor(logVnd,logk4)     -0.08      0.07    -0.21     0.05 1.00     5572     3100
-    ## rescor(logBPp,logk4)     -0.15      0.07    -0.28    -0.01 1.00     5632     3136
+    ## rescor(logK1,logVnd)     -0.51      0.05    -0.60    -0.40 1.00     9147     6417
+    ## rescor(logK1,logBPp)     -0.11      0.07    -0.25     0.04 1.00     9090     6110
+    ## rescor(logVnd,logBPp)    -0.09      0.07    -0.23     0.04 1.00    10496     6089
+    ## rescor(logK1,logk4)      -0.34      0.06    -0.46    -0.21 1.00     8854     5854
+    ## rescor(logVnd,logk4)     -0.08      0.07    -0.21     0.05 1.00    10972     6137
+    ## rescor(logBPp,logk4)     -0.14      0.07    -0.28    -0.00 1.00    10980     6091
     ## 
     ## Draws were sampled using sample(hmc). For each parameter, Bulk_ESS
     ## and Tail_ESS are effective sample size measures, and Rhat is the potential
@@ -934,7 +936,7 @@ ggplot(simcompare, aes(x=Comparison, y=estimate, colour=Test)) +
   scale_colour_brewer(type="qual", palette = 2)
 ```
 
-![](PuMBA_Demonstration_files/figure-gfm/unnamed-chunk-137-1.png)<!-- -->
+![](PuMBA_Demonstration_files/figure-gfm/unnamed-chunk-29-1.png)<!-- -->
 
 Let’s also compare the standard errors, describing the precision of our
 estimates:
@@ -952,7 +954,7 @@ ggplot(simcompare, aes(x=Comparison, y=SE, colour=Test)) +
   scale_colour_brewer(type="qual", palette = 2)
 ```
 
-![](PuMBA_Demonstration_files/figure-gfm/unnamed-chunk-138-1.png)<!-- -->
+![](PuMBA_Demonstration_files/figure-gfm/unnamed-chunk-30-1.png)<!-- -->
 
 Note that while SiMBA does outperform PuMBA, it is approximately 4000
 times slower to estimate, restricted to the two-tissue compartment
@@ -998,7 +1000,7 @@ ggplot(srtm_modeldat, aes(x=Group, y=logBPnd, colour=Group)) +
   facet_wrap(~Region)
 ```
 
-![](PuMBA_Demonstration_files/figure-gfm/unnamed-chunk-140-1.png)<!-- -->
+![](PuMBA_Demonstration_files/figure-gfm/unnamed-chunk-32-1.png)<!-- -->
 
 Now let’s model this with PuMBA
 
@@ -1052,16 +1054,12 @@ pumba_srtm <- brms::brm(formula = bf_R1 + bf_k2prime + bf_BPnd + set_rescor(TRUE
           data = srtm_modeldat, 
           family = gaussian(), 
           prior = pumba_srtm_prior, 
-          cores=4,
+          cores=4, iter=4000,
           silent = 2, refresh=0, seed = 42)
 ```
 
     ## Warning: The global prior 'normal(-1, 0.25)' of class 'b' will not be used in the model as all related coefficients have individual priors already. If you did not set those priors yourself, then maybe brms has assigned default priors.
     ## See ?set_prior and ?get_prior for more details.
-
-    ## Warning: Bulk Effective Samples Size (ESS) is too low, indicating posterior means and medians may be unreliable.
-    ## Running the chains for more iterations may help. See
-    ## https://mc-stan.org/misc/warnings.html#bulk-ess
 
 ``` r
 pumba_srtm
@@ -1075,57 +1073,57 @@ pumba_srtm
     ##          logk2prime ~ 1 + (1 | j | Region) + (1 | k | ID) 
     ##          logBPnd ~ 1 + Region + Group + (1 | k | ID) 
     ##    Data: srtm_modeldat (Number of observations: 900) 
-    ##   Draws: 4 chains, each with iter = 2000; warmup = 1000; thin = 1;
-    ##          total post-warmup draws = 4000
+    ##   Draws: 4 chains, each with iter = 4000; warmup = 2000; thin = 1;
+    ##          total post-warmup draws = 8000
     ## 
     ## Group-Level Effects: 
     ## ~ID (Number of levels: 100) 
     ##                                             Estimate Est.Error l-95% CI u-95% CI Rhat Bulk_ESS Tail_ESS
-    ## sd(logR1_Intercept)                             0.09      0.01     0.08     0.11 1.00      583     1292
-    ## sd(logk2prime_Intercept)                        0.20      0.01     0.17     0.23 1.00      473      989
-    ## sd(logBPnd_Intercept)                           0.22      0.02     0.19     0.26 1.00      703     1264
-    ## cor(logR1_Intercept,logk2prime_Intercept)      -0.18      0.10    -0.37     0.02 1.01      435      775
-    ## cor(logR1_Intercept,logBPnd_Intercept)          0.66      0.06     0.53     0.78 1.00      638     1246
-    ## cor(logk2prime_Intercept,logBPnd_Intercept)     0.20      0.10     0.00     0.39 1.00      674     1005
+    ## sd(logR1_Intercept)                             0.09      0.01     0.08     0.11 1.01      786     1971
+    ## sd(logk2prime_Intercept)                        0.20      0.01     0.17     0.23 1.01     1032     1964
+    ## sd(logBPnd_Intercept)                           0.22      0.02     0.19     0.26 1.00     1164     2150
+    ## cor(logR1_Intercept,logk2prime_Intercept)      -0.18      0.10    -0.37     0.02 1.00      659     1320
+    ## cor(logR1_Intercept,logBPnd_Intercept)          0.66      0.06     0.53     0.77 1.00     1308     2759
+    ## cor(logk2prime_Intercept,logBPnd_Intercept)     0.20      0.10    -0.00     0.40 1.00     1165     2308
     ## 
     ## ~Region (Number of levels: 9) 
     ##                          Estimate Est.Error l-95% CI u-95% CI Rhat Bulk_ESS Tail_ESS
-    ## sd(logk2prime_Intercept)     0.17      0.04     0.12     0.25 1.00     1584     2213
+    ## sd(logk2prime_Intercept)     0.17      0.03     0.12     0.25 1.00     2588     4053
     ## 
     ## Population-Level Effects: 
     ##                       Estimate Est.Error l-95% CI u-95% CI Rhat Bulk_ESS Tail_ESS
-    ## logBPnd_Intercept        -0.83      0.03    -0.89    -0.77 1.00      739     1470
-    ## logR1_Intercept          -0.09      0.01    -0.11    -0.06 1.01      393      937
-    ## logR1_Regiondpu           0.05      0.01     0.03     0.07 1.00     2208     2957
-    ## logR1_Regionvst          -0.05      0.01    -0.07    -0.03 1.00     2091     2846
-    ## logR1_Regionamy          -0.25      0.01    -0.27    -0.23 1.00     2167     2866
-    ## logR1_Regiontha           0.07      0.01     0.05     0.09 1.00     2285     2937
-    ## logR1_Regionhip          -0.17      0.01    -0.19    -0.15 1.00     2226     2962
-    ## logR1_Regioncin           0.06      0.01     0.04     0.07 1.00     2168     2846
-    ## logR1_Regionins          -0.01      0.01    -0.02     0.01 1.00     1973     2687
-    ## logR1_Regionmidcs_c      -0.21      0.01    -0.23    -0.20 1.00     2173     2781
-    ## logk2prime_Intercept     -3.09      0.06    -3.20    -2.97 1.01      691     1473
-    ## logBPnd_Regiondpu         1.04      0.02     0.99     1.09 1.00     2004     2976
-    ## logBPnd_Regionvst         1.25      0.02     1.20     1.29 1.00     2130     2830
-    ## logBPnd_Regionamy         1.08      0.02     1.04     1.13 1.00     1914     2582
-    ## logBPnd_Regiontha         0.94      0.02     0.89     0.98 1.00     1947     2876
-    ## logBPnd_Regionhip         0.24      0.02     0.20     0.29 1.00     1955     2894
-    ## logBPnd_Regioncin         0.02      0.02    -0.03     0.07 1.00     1937     2772
-    ## logBPnd_Regionins         0.44      0.02     0.39     0.49 1.00     1905     2396
-    ## logBPnd_Regionmidcs_c     1.61      0.02     1.56     1.66 1.00     1889     2699
-    ## logBPnd_GroupPatient      0.08      0.03     0.02     0.14 1.01     1052     1632
+    ## logBPnd_Intercept        -0.83      0.03    -0.90    -0.77 1.00     1196     2691
+    ## logR1_Intercept          -0.09      0.01    -0.11    -0.07 1.01      682     1460
+    ## logR1_Regiondpu           0.05      0.01     0.03     0.07 1.00     2968     4901
+    ## logR1_Regionvst          -0.05      0.01    -0.07    -0.03 1.00     2931     4968
+    ## logR1_Regionamy          -0.25      0.01    -0.27    -0.23 1.00     2903     4329
+    ## logR1_Regiontha           0.07      0.01     0.05     0.09 1.00     3032     4344
+    ## logR1_Regionhip          -0.17      0.01    -0.19    -0.15 1.00     2989     4959
+    ## logR1_Regioncin           0.06      0.01     0.04     0.07 1.00     2953     4511
+    ## logR1_Regionins          -0.01      0.01    -0.02     0.01 1.00     2872     4754
+    ## logR1_Regionmidcs_c      -0.21      0.01    -0.23    -0.20 1.00     2859     4494
+    ## logk2prime_Intercept     -3.09      0.06    -3.21    -2.97 1.00     1283     2107
+    ## logBPnd_Regiondpu         1.04      0.02     0.99     1.09 1.00     3390     4174
+    ## logBPnd_Regionvst         1.25      0.02     1.20     1.30 1.00     3497     4776
+    ## logBPnd_Regionamy         1.08      0.02     1.04     1.13 1.00     3464     4677
+    ## logBPnd_Regiontha         0.94      0.02     0.89     0.99 1.00     3603     4388
+    ## logBPnd_Regionhip         0.24      0.02     0.20     0.29 1.00     3395     5263
+    ## logBPnd_Regioncin         0.02      0.02    -0.03     0.07 1.00     3359     4931
+    ## logBPnd_Regionins         0.44      0.02     0.39     0.49 1.00     3465     4549
+    ## logBPnd_Regionmidcs_c     1.61      0.02     1.56     1.66 1.00     3437     4982
+    ## logBPnd_GroupPatient      0.08      0.03     0.02     0.15 1.00     1806     3204
     ## 
     ## Family Specific Parameters: 
     ##                  Estimate Est.Error l-95% CI u-95% CI Rhat Bulk_ESS Tail_ESS
-    ## sigma_logR1          0.07      0.00     0.06     0.07 1.00     5577     3301
-    ## sigma_logk2prime     0.13      0.00     0.13     0.14 1.00     5509     2908
-    ## sigma_logBPnd        0.17      0.00     0.17     0.18 1.00     5610     3543
+    ## sigma_logR1          0.07      0.00     0.06     0.07 1.00     9370     6409
+    ## sigma_logk2prime     0.13      0.00     0.13     0.14 1.00     8635     6414
+    ## sigma_logBPnd        0.17      0.00     0.17     0.18 1.00     9588     6015
     ## 
     ## Residual Correlations: 
     ##                            Estimate Est.Error l-95% CI u-95% CI Rhat Bulk_ESS Tail_ESS
-    ## rescor(logR1,logk2prime)      -0.33      0.03    -0.39    -0.27 1.00     4817     2656
-    ## rescor(logR1,logBPnd)          0.22      0.03     0.16     0.29 1.00     4656     3183
-    ## rescor(logk2prime,logBPnd)    -0.29      0.03    -0.35    -0.23 1.00     4132     3053
+    ## rescor(logR1,logk2prime)      -0.33      0.03    -0.39    -0.27 1.00     8600     5799
+    ## rescor(logR1,logBPnd)          0.22      0.03     0.15     0.29 1.00     9538     6656
+    ## rescor(logk2prime,logBPnd)    -0.29      0.03    -0.35    -0.22 1.00     8810     6007
     ## 
     ## Draws were sampled using sampling(NUTS). For each parameter, Bulk_ESS
     ## and Tail_ESS are effective sample size measures, and Rhat is the potential
@@ -1210,7 +1208,7 @@ ggplot(onetc_modeldat, aes(x=Group, y=logVt, colour=Group)) +
   facet_wrap(~Region)
 ```
 
-![](PuMBA_Demonstration_files/figure-gfm/unnamed-chunk-145-1.png)<!-- -->
+![](PuMBA_Demonstration_files/figure-gfm/unnamed-chunk-37-1.png)<!-- -->
 
 Now let’s model this with PuMBA
 
@@ -1258,11 +1256,11 @@ pumba_1tc <- brms::brm(formula = bf_K1 + bf_Vt + set_rescor(TRUE),
           data = onetc_modeldat, 
           family = gaussian(), 
           prior = pumba_onetc_prior, 
-          cores=4,
+          cores=4, iter=4000,
           silent = 2, refresh=0, seed = 42)
 ```
 
-    ## Warning: The largest R-hat is 1.06, indicating chains have not mixed.
+    ## Warning: The largest R-hat is 1.09, indicating chains have not mixed.
     ## Running the chains for more iterations may help. See
     ## https://mc-stan.org/misc/warnings.html#r-hat
 
@@ -1286,46 +1284,46 @@ pumba_1tc
     ## Formula: logK1 ~ 1 + Region + (1 | k | ID) 
     ##          logVt ~ 1 + Region + Group + (1 | k | ID) 
     ##    Data: onetc_modeldat (Number of observations: 900) 
-    ##   Draws: 4 chains, each with iter = 2000; warmup = 1000; thin = 1;
-    ##          total post-warmup draws = 4000
+    ##   Draws: 4 chains, each with iter = 4000; warmup = 2000; thin = 1;
+    ##          total post-warmup draws = 8000
     ## 
     ## Group-Level Effects: 
     ## ~ID (Number of levels: 100) 
     ##                                      Estimate Est.Error l-95% CI u-95% CI Rhat Bulk_ESS Tail_ESS
-    ## sd(logK1_Intercept)                      0.27      0.02     0.23     0.31 1.01      165      172
-    ## sd(logVt_Intercept)                      0.30      0.02     0.26     0.35 1.01      255      360
-    ## cor(logK1_Intercept,logVt_Intercept)     0.50      0.08     0.35     0.64 1.02      221      478
+    ## sd(logK1_Intercept)                      0.27      0.02     0.24     0.31 1.02      194      391
+    ## sd(logVt_Intercept)                      0.30      0.02     0.26     0.35 1.01      373      544
+    ## cor(logK1_Intercept,logVt_Intercept)     0.52      0.08     0.36     0.65 1.01      361      747
     ## 
     ## Population-Level Effects: 
     ##                         Estimate Est.Error l-95% CI u-95% CI Rhat Bulk_ESS Tail_ESS
-    ## logK1_Intercept            -1.86      0.03    -1.92    -1.82 1.06       51      150
-    ## logK1_Regionamy            -0.50      0.01    -0.52    -0.49 1.00     1468     1883
-    ## logK1_Regiondpu            -0.09      0.01    -0.10    -0.07 1.00     1300     2150
-    ## logK1_Regionhip            -0.33      0.01    -0.34    -0.32 1.00     1374     2322
-    ## logK1_Regionins            -0.20      0.01    -0.21    -0.18 1.00     1499     2393
-    ## logK1_Regionmed            -0.09      0.01    -0.11    -0.08 1.00     1489     2297
-    ## logK1_Regionpip            -0.48      0.01    -0.49    -0.47 1.00     1467     2322
-    ## logK1_Regionraphe_t_all    -0.35      0.01    -0.36    -0.34 1.00     1397     2329
-    ## logK1_Regionvst            -0.20      0.01    -0.21    -0.19 1.00     1486     2376
-    ## logVt_Intercept             3.02      0.04     2.94     3.10 1.03      172      296
-    ## logVt_Regionamy             0.15      0.02     0.12     0.18 1.00     1304     1908
-    ## logVt_Regiondpu            -0.28      0.01    -0.32    -0.26 1.00     1381     1993
-    ## logVt_Regionhip            -0.65      0.01    -0.68    -0.62 1.00     1420     2325
-    ## logVt_Regionins             0.19      0.01     0.16     0.22 1.00     1357     2169
-    ## logVt_Regionmed             0.06      0.02     0.03     0.09 1.00     1473     2150
-    ## logVt_Regionpip            -0.14      0.02    -0.17    -0.11 1.00     1294     1902
-    ## logVt_Regionraphe_t_all    -0.86      0.01    -0.89    -0.83 1.00     1326     1813
-    ## logVt_Regionvst             0.17      0.01     0.14     0.19 1.00     1308     2057
-    ## logVt_GroupPatient          0.18      0.05     0.08     0.29 1.01      201      294
+    ## logK1_Intercept            -1.87      0.03    -1.93    -1.81 1.09       53      214
+    ## logK1_Regionamy            -0.50      0.01    -0.52    -0.49 1.00     2341     4399
+    ## logK1_Regiondpu            -0.09      0.01    -0.10    -0.07 1.00     2340     3733
+    ## logK1_Regionhip            -0.33      0.01    -0.34    -0.32 1.00     2300     4447
+    ## logK1_Regionins            -0.20      0.01    -0.21    -0.18 1.00     2380     3920
+    ## logK1_Regionmed            -0.09      0.01    -0.11    -0.08 1.00     2300     3943
+    ## logK1_Regionpip            -0.48      0.01    -0.49    -0.47 1.00     2432     3612
+    ## logK1_Regionraphe_t_all    -0.35      0.01    -0.36    -0.34 1.00     2385     3704
+    ## logK1_Regionvst            -0.20      0.01    -0.21    -0.19 1.00     2232     3869
+    ## logVt_Intercept             3.02      0.04     2.94     3.10 1.01      240      577
+    ## logVt_Regionamy             0.15      0.02     0.12     0.18 1.00     1585     3441
+    ## logVt_Regiondpu            -0.28      0.02    -0.31    -0.25 1.00     1615     3727
+    ## logVt_Regionhip            -0.65      0.02    -0.68    -0.62 1.00     1651     2979
+    ## logVt_Regionins             0.19      0.02     0.16     0.22 1.00     1602     3489
+    ## logVt_Regionmed             0.06      0.02     0.03     0.09 1.00     1655     3493
+    ## logVt_Regionpip            -0.14      0.02    -0.17    -0.11 1.00     1555     3470
+    ## logVt_Regionraphe_t_all    -0.86      0.01    -0.89    -0.83 1.00     1564     3701
+    ## logVt_Regionvst             0.17      0.02     0.14     0.20 1.00     1602     3641
+    ## logVt_GroupPatient          0.17      0.05     0.07     0.27 1.01      384      735
     ## 
     ## Family Specific Parameters: 
     ##             Estimate Est.Error l-95% CI u-95% CI Rhat Bulk_ESS Tail_ESS
-    ## sigma_logK1     0.04      0.00     0.04     0.05 1.00     2542     2632
-    ## sigma_logVt     0.11      0.00     0.10     0.11 1.00     3302     2899
+    ## sigma_logK1     0.04      0.00     0.04     0.05 1.00     5259     5404
+    ## sigma_logVt     0.11      0.00     0.10     0.11 1.00     4576     4691
     ## 
     ## Residual Correlations: 
     ##                     Estimate Est.Error l-95% CI u-95% CI Rhat Bulk_ESS Tail_ESS
-    ## rescor(logK1,logVt)     0.06      0.04    -0.01     0.13 1.00     3160     2983
+    ## rescor(logK1,logVt)     0.06      0.04    -0.01     0.13 1.00     4936     4803
     ## 
     ## Draws were sampled using sampling(NUTS). For each parameter, Bulk_ESS
     ## and Tail_ESS are effective sample size measures, and Rhat is the potential

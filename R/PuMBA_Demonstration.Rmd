@@ -494,6 +494,8 @@ nls_simres_lme_bpp %>%
   geom_hline(yintercept=0.182, colour="red", linetype="dashed") +
   coord_flip()
 ```
+
+
 This results in tigher confidence intervals, which is a good sign!
 
 
@@ -588,6 +590,7 @@ pumba_fit <- brm(pumba_formula,
     prior = pumba_prior,
     backend = "cmdstanr", 
     inits = 0, cores=4, 
+    iter=4000,
     silent = 2, refresh=0)
 
 pumba_fit
@@ -753,7 +756,7 @@ pumba_srtm <- brms::brm(formula = bf_R1 + bf_k2prime + bf_BPnd + set_rescor(TRUE
           data = srtm_modeldat, 
           family = gaussian(), 
           prior = pumba_srtm_prior, 
-          cores=4,
+          cores=4, iter=4000,
           silent = 2, refresh=0, seed = 42)
 
 pumba_srtm
@@ -830,7 +833,7 @@ pumba_1tc <- brms::brm(formula = bf_K1 + bf_Vt + set_rescor(TRUE),
           data = onetc_modeldat, 
           family = gaussian(), 
           prior = pumba_onetc_prior, 
-          cores=4,
+          cores=4, iter=4000,
           silent = 2, refresh=0, seed = 42)
 
 pumba_1tc
