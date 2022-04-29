@@ -1,0 +1,844 @@
+---
+title: "PuMBA Demonstration"
+always_allow_html: true
+output:
+  github_document:
+    toc: yes
+  html_document:
+    df_print: paged
+    toc: yes
+    toc_float:
+      toc_collapsed: yes
+---
+
+# Aims
+
+Here I will show the basic usage of PuMBA on a couple of simulated datasets.  I will first go through the data briefly, and then demonstrate fitting the model to this data.
+
+
+# Libraries
+
+```{r, message=FALSE}
+library(tidyverse)
+library(brms)
+library(skimr)
+library(ggbeeswarm)
+library(job)
+library(broom)
+library(broom.mixed)
+library(lme4)
+library(lmerTest)
+
+theme_set(theme_light())
+set.seed(555)
+```
+
+
+# TAC Data: 2TC
+
+I will first demonstrate the use of PuMBA using a simulated dataset taken from our first paper on these types of models, called SiMBA.  The dataset comes from [here](https://github.com/mathesong/SiMBA_Materials).
+
+
+## Exploring the data
+
+### Loading
+
+I saved the simulated sample data in the RawData folder.
+
+```{r}
+simdat <- readRDS("../RawData/simdata.rds")
+
+head(simdat)
+
+skim(simdat)
+```
+
+
+### Measured Data
+
+This dataset consists of 10 controls and 10 patients.  The sigma value is set to about 10% of the mean TAC value. There is a group difference of 20% (Cohen's d = 0.55) in all regions.  The unique identifier for each individual is called `WAYID`.
+
+
+#### TAC
+
+For now, I'll just work with the first subject and one region.
+
+```{r}
+subjdat <- simdat %>% 
+  filter(WAYID==WAYID[sample(1:nrow(simdat), 1)] & Region=="dor")
+```
+
+Let's have a look
+
+```{r}
+subjdat %>% 
+  select(t_tac, Measured = TAC, True = TAC_true) %>% 
+  ggplot(aes(x=t_tac, y=Measured)) +
+  geom_point() + 
+  geom_line(aes(y=True), linetype="dashed") +
+  labs(title="Simulated TAC from the DLPFC",
+       subtitle="Points represent the measured TAC, and the dashed line represents the true TAC without error",
+       x = "Time (min)",
+       y = "Radioactivity")
+```
+
+
+
+
+
+#### Arterial Input function
+
+The AIF is modelled with a tri-exponential function.
+
+```{r}
+predict_aif <- function(time, t0, slope, peaktime, A, B, C, alpha, beta, gamma) {
+  
+  t_corr <- time - t0
+  
+  if(t_corr <= 0) {
+    pred <- 0
+    return(pred)
+  }
+  
+  if(t_corr <= peaktime) {
+    pred <- t_corr * slope
+    return(pred)
+  }
+  
+  if(t_corr > peaktime) {
+    pred <- A*exp(-alpha*t_corr) + 
+      B*exp(-beta*t_corr) + 
+      C*exp(-gamma*t_corr)
+    return(pred)
+  }
+}
+
+time <- seq(0, 105, by=0.01)
+aif <- map_dbl(time, ~with(subjdat[1,], 
+            predict_aif(.x, t0, slope, peaktime, A, B, C, alpha, beta, gamma)))
+
+AIFdat <- tibble(
+  time = time, 
+  AIF = aif
+)
+
+ggplot(AIFdat, aes(x=time, y=AIF)) +
+  geom_line(colour="red")
+```
+
+
+
+So now, we can show the AIF and the TAC together.
+
+```{r}
+subjdat %>% 
+  select(t_tac, Measured = TAC, True = TAC_true) %>% 
+  ggplot(aes(x=t_tac, y=Measured)) +
+  geom_point() + 
+  geom_line(aes(y=True), linetype="dashed") +
+  labs(title="Simulated TAC and AIF",
+       subtitle="Black represents the TAC and true TAC, while red represents the AIF",
+       x = "Time (min)",
+       y = "Radioactivity") +
+  geom_line(data = AIFdat, aes(x=time, y=AIF), colour="red") +
+  coord_cartesian(ylim = c(-0.02, 0.3))
+```
+
+#### Whole Blood
+
+We did not have access to whole blood data, as this was not measured. However, we did measure whole plasma data, which we substitute for whole blood data. In preprocessing, I fit a spline to this data, and calculated the mean blood concentration during each frame. This allows us to input blood concentration as a vector like the TAC.
+
+```{r}
+ggplot(subjdat, aes(x=t_tac, y=TAC)) +
+  geom_point() + 
+  geom_line(aes(x=t_tac, y=meanblood), colour="blue") +
+  geom_point(aes(x=t_tac, y=meanblood), colour="blue") +
+  geom_line(data = AIFdat, aes(x=time, y=AIF), colour="red") +
+  labs(title="Blood, AIF and TAC",
+       subtitle="The whole blood is represented in blue, the AIF in red, and the TAC in black",
+       x = "Time (min)",
+       y = "Radioactivity")
+```
+
+
+
+### Simulation Data
+
+Now, let's explore some of the characteristics of the simulation. 
+
+#### Measurement Error
+
+First, let's look at measurement error.  This is simulated from the fitted spline.  Let's examine the values of the measurement error SD over the course of the single TAC above.
+
+```{r}
+subjdat %>% 
+  mutate(Sigma_Percentage = 100*(exp(sigwig))) %>% 
+  ggplot(aes(x=t_tac, y=Sigma_Percentage)) +
+  geom_point() +
+  geom_line() +
+  geom_hline(aes(yintercept=100), linetype="dashed") +
+  labs(x="Time (min)",
+       y="Measurement Error (%)",
+       title="Measurement error function",
+       subtitle="Measurement error as a percentage of the mean value across the PET measurement")
+```
+
+This function is partially related to the durations of the frames, but not completely.
+
+```{r}
+ggplot(data=subjdat, aes(x=t_tac, y=durations)) +
+  geom_point() +
+  geom_line() +
+  labs(x="Time (min)",
+       y="Frame Duration (min)",
+       title="Frame durations",
+       subtitle="Frame durations over the course of the PET measurement")
+```
+
+
+The true sigma at each point in time is taken from the addition of the true sigma for each ROI and individual, `sigma_true`, and adding `sigwig` (the sigma wiggly function), to make `sigma_w_true`.
+
+Let's show this represented around the TAC.
+
+```{r}
+subjdat %>% 
+  select(t_tac, Measured = TAC, True = TAC_true, sigma = sigma_w_true) %>% 
+  mutate(sigma = exp(sigma)) %>% 
+  ggplot(aes(x=t_tac, y=Measured)) +
+  geom_point(size=3, aes(y=True)) + 
+  geom_errorbar(aes(ymax = True + 1.96*sigma, ymin = True - 1.96*sigma)) +
+  geom_point(colour="red", size=3, shape=8) + 
+  geom_line(aes(y=True), linetype="dashed") +
+  labs(title="True and measured TACs and measurement error",
+       subtitle="True TAC and the measurement error in black, with the measured TAC in red",
+       x = "Time (min)",
+       y = "Radioactivity")
+```
+
+#### Parameters by Region
+
+The true parameters are included as simulated from the model.  Here I'll make a data frame with only the parameters.
+
+```{r}
+pardat <- simdat %>% 
+  filter(!duplicated(paste0(WAYID, Region))) %>% 
+  select(WAYID, Region, contains("_true"), Group) %>% 
+  select(-TAC_true, -sigma_w_true) %>% 
+  gather(Parameter, Value, -WAYID, -Region, -Group) %>% 
+  mutate(Value = exp(Value),
+         Parameter = str_remove(Parameter, "log"),
+         Parameter = str_remove(Parameter, "_true"),
+         Parameter = fct_inorder(Parameter))
+
+pardat_wide <- simdat %>% 
+  filter(!duplicated(paste0(WAYID, Region))) %>% 
+  select(WAYID, Region, contains("_true"), Group) %>% 
+  select(-TAC_true, -sigma_w_true)
+```
+
+Let's look at the differences between true parameters in the different regions.
+
+```{r, fig.width=10, fig.height=10}
+ggplot(pardat, aes(x=Value, colour=Region, fill=Region)) + 
+  geom_histogram(alpha=0.4) +
+  facet_grid(Region ~ Parameter, scales="free") +
+  theme(axis.text.x = element_text(angle = 45, vjust = 0.5, hjust=1))
+```
+
+
+Note the regions are as follows:
+
+* acn : anterior cingulate cortex
+* amy : amygdala
+* cin : posterior cingulate cortex
+* dor : dorsolateral prefrontal cortex
+* hip : hippocampus
+* ins : insula
+* med : medial prefrontal cortex
+* pip : parahippocampal cortex
+* WAY_rphelpscs_c : dorsal raphe nucleus
+
+
+#### Parameters by Group
+
+There are only group differences in BP~ND~, which are the same across all regions: 20%. Let's take a look by looking at only the DLPFC ROI.
+
+
+```{r}
+parroidat <- pardat %>% 
+  filter(Region=="dor")
+```
+
+Let's look at the differences between true parameters in the different regions.
+
+```{r}
+ggplot(parroidat, aes(x=Group, y=Value, colour=Group, fill=Group)) + 
+  geom_violin(alpha=0.4) +
+  geom_beeswarm() +
+  facet_wrap(~Parameter, scales="free")
+```
+
+This really speaks to the difficulty of sampling variation... Really hard to see anything at all there in BP~ND~ in this particular sample.
+
+
+## NLS Modelling
+
+We would usually model these TACs using nonlinear least squares, and then perform statistical inference.  Let's do that for comparison here.  First, we need to define the model in R code.
+
+```{r}
+two_compartment_log = function(logk1, logvnd, logbpnd, logk4, logvb, time, 
+                               t0_aif, b_aif, 
+                               lambda1_aif, lambda2_aif, lambda3_aif, 
+                               A1_aif, A2_aif, A3_aif, tstar_aif, 
+                               bloodval){
+  
+  
+  k1 = exp(logk1)
+  vnd = exp(logvnd)
+  bpnd = exp(logbpnd)
+  k4 = exp(logk4)
+  vb = exp(logvb)
+  
+  k2 = k1 / vnd
+  k3 = bpnd * k4
+  
+  R1 = 0.5 * (k2 + k3 + k4 + sqrt((k2 + k3 + k4)^2 - 4 * k2 * k4))
+  R2 = 0.5 * (k2 + k3 + k4 - sqrt((k2 + k3 + k4)^2 - 4 * k2 * k4))
+  L1 = (k1 * (R1 - k3 - k4))/(R1 - R2)
+  L2 = (k1 * (k3 + k4 - R2))/(R1 - R2)
+  
+  time <- time - t0_aif
+  tstar_aif <- tstar_aif - t0_aif
+  
+  out <- (time>0)*((1-vb)*
+                     
+   ((time<tstar_aif)*(b_aif*L1*(exp(-R1*time)/R1^2 + time/R1 - 1/R1^2) +
+                        b_aif*L2*(exp(-R2*time)/R2^2 + time/R2 - 1/R2^2)) +
+      
+      (time>=tstar_aif)*(b_aif*L1*exp(-R1*time)*(tstar_aif/R1*exp(R1*tstar_aif) - 
+                                                   1/R1^2*exp(R1*tstar_aif) + 
+                                                   1/R1^2) + 
+         L1*A1_aif*(exp(-lambda1_aif*time)/(R1-lambda1_aif) -
+                      exp(R1*tstar_aif-R1*time-lambda1_aif*tstar_aif)/(R1-lambda1_aif)) +
+         L1*A2_aif*(exp(-lambda2_aif*time)/(R1-lambda2_aif) -
+                      exp(R1*tstar_aif-R1*time-lambda2_aif*tstar_aif)/(R1-lambda2_aif)) +
+         L1*A3_aif*(exp(-lambda3_aif*time)/(R1-lambda3_aif) -
+                      exp(R1*tstar_aif-R1*time-lambda3_aif*tstar_aif)/(R1-lambda3_aif)) +
+         b_aif*L2*exp(-R2*time)*(tstar_aif/R2*exp(R2*tstar_aif) - 
+                                   1/R2^2*exp(R2*tstar_aif) + 1/R2^2) +
+         L2*A1_aif*(exp(-lambda1_aif*time)/(R2-lambda1_aif) -
+                      exp(R2*tstar_aif-R2*time-lambda1_aif*tstar_aif)/(R2-lambda1_aif)) +
+         L2*A2_aif*(exp(-lambda2_aif*time)/(R2-lambda2_aif) -
+                      exp(R2*tstar_aif-R2*time-lambda2_aif*tstar_aif)/(R2-lambda2_aif)) +
+         L2*A3_aif*(exp(-lambda3_aif*time)/(R2-lambda3_aif) -
+                      exp(R2*tstar_aif-R2*time-lambda3_aif*tstar_aif)/(R2-lambda3_aif)))) + 
+                     vb*bloodval)
+  
+  out <- as.numeric(out)
+  
+  return(out)
+}
+```
+
+Now, we calculate model weights.
+
+```{r}
+nls_simdat_wide <- simdat %>% 
+    pivot_wider(names_from = Region, values_from = TAC, id_cols = c(WAYID, t_tac, durations)) %>% 
+    group_by(WAYID) %>% 
+    nest() %>% 
+    mutate(weights = map(data, ~kinfitr::weights_create(
+      t_start = .x$t_tac - 0.5*.x$durations,
+      t_end   = .x$t_tac + 0.5*.x$durations,
+      tac = abs(.x$dor), radioisotope = "C11"
+    ))) %>% 
+    unnest(c(data, weights)) %>% 
+    pivot_longer(cols = dor:WAY_rphelpscs_c, names_to = "Region", values_to = "TAC") %>% 
+    ungroup()
+```
+
+... and then bind them to the data
+
+```{r}
+nls_simdat <- left_join(nls_simdat_wide, simdat, by=c("WAYID", "t_tac", 
+                                                    "durations", "Region", 
+                                                    "TAC")) %>% 
+    group_by(WAYID, Region) %>% 
+    nest() %>% 
+    mutate(weightsvals = map(data, ~pull(.x, weights)))
+```
+
+Now we're ready to fit the TACs.  I fit them with multiple starting values (10 fits per TAC), to try to avoid falling into a local minimum.
+
+```{r}
+nls_simdat <- nls_simdat %>%
+  mutate(fit = map(data, ~nls.multstart::nls_multstart(
+    TAC ~ two_compartment_log(logk1, logvnd, logbpnd, logk4, logvb,
+                              t_tac, t0, slope,
+                              alpha, beta, gamma,
+                              A, B, C, peaktime,
+                              meanblood), data = .x,
+    start_lower = c(logk1=-3, logvnd=-1.5, logbpnd=1.5, logk4=-4.5, logvb=-4.5),
+    start_upper = c(logk1=-2, logvnd=-0.5, logbpnd=2.5, logk4=-3.5, logvb=-3.5),
+    upper = c(logk1=0, logvnd=1, logbpnd=3.5, logk4=-1, logvb=-2.5),
+    lower = c(logk1=-6, logvnd=-4, logbpnd=-1, logk4=-4, logvb=-7),
+    modelweights = weights, iter=10, supp_errors = "Y")))
+```
+
+Now, let's extract the values
+
+```{r}
+nls_simres <- nls_simdat %>% 
+    mutate(coef = map(fit, ~as.data.frame(as.list(coef(.x))))) %>% 
+    ungroup() %>% 
+    unnest(coef) %>% 
+    mutate(logvt = log( exp(logvnd)*(1 + exp(logbpnd)) ),
+           logbpp = log( exp(logvnd)*(exp(logbpnd)) ),
+           Group = map_chr(data, ~.x$Group[1])) %>% 
+    select(WAYID, Region, logk1:Group)
+  
+truevals <- nls_simdat %>% 
+    select(WAYID, Region, data) %>% 
+    unnest(data) %>% 
+    filter(!duplicated(paste0(Region, WAYID))) %>% 
+    select(WAYID, Region, ends_with("_true")) %>% 
+    select(-TAC_true) %>% 
+    mutate(logVt_true = log( exp(logVnd_true)*(1 + exp(logBPnd_true)) ),
+           logBPp_true = log( exp(logVnd_true)*(exp(logBPnd_true))) )
+  
+nls_simres <- nls_simres %>% 
+    left_join(truevals)
+```
+
+
+### Comparison to true values
+
+Let's see how well we've estimated the binding. 
+
+First, for BP~P~:
+
+```{r}
+ggplot(nls_simres, aes(x=logBPp_true, y=logbpp, colour=Region)) + 
+  geom_point() +
+  facet_wrap(~Region, scales="free") + 
+  geom_smooth(method="lm", se=FALSE)
+
+nls_simres %>% 
+  group_by(Region) %>% 
+  summarise(cor = cor(logBPp_true, logbpp))
+```
+
+
+And then for BP~ND~:
+
+```{r}
+ggplot(nls_simres, aes(x=logBPnd_true, y=logbpnd, colour=Region)) + 
+  geom_point() +
+  facet_wrap(~Region, scales="free") + 
+  geom_smooth(method="lm", se=FALSE)
+
+nls_simres %>% 
+  group_by(Region) %>% 
+  summarise(cor = cor(logBPnd_true, logbpnd))
+```
+
+
+It was for this reason that we opted to use BP~P~ for PuMBA rather than BP~ND~.
+
+## Conventional Statistical Analysis
+
+Next, we move to statistical comparison.
+
+### t-tests
+
+For the comparisons below, the difference is calculated as Group1 - Group2, so it is negative. I will correct this so that they are positive.
+
+
+```{r}
+nls_simres_t_bpp <- nls_simres %>% 
+  group_by(Region) %>% 
+  nest() %>% 
+  mutate(res = map(data, ~broom::glance(t.test(logbpp ~ Group, data=.x)))) %>% 
+  select(Region, res) %>% 
+  unnest(res) %>% 
+  mutate(across(.cols=c(estimate, conf.low, conf.high), .fns = ~.x*-1))
+
+nls_simres_t_bpp
+
+ggplot(nls_simres_t_bpp, aes(x=Region, y=estimate)) +
+  geom_point() + 
+  geom_errorbar(aes(ymin=conf.low, ymax=conf.high)) +
+  geom_hline(yintercept=0.182, colour="red", linetype="dashed") +
+  coord_flip()
+```
+
+These are mostly in the right direction, but the 95% CIs around the estimates are very wide indeed...
+
+
+### LME
+
+In order to improve our estimation, we can use linear mixed effects models.
+
+```{r}
+nls_simres_lme_bpp <- broom.mixed::tidy(lmerTest::lmer(logbpp ~ 1 + Region + Group + (1|WAYID), 
+                                                  data=nls_simres))
+
+nls_simres_lme_bpp
+
+nls_simres_lme_bpp %>% 
+  filter(term=="GroupPatient") %>% 
+  ggplot(aes(x=term, y=estimate)) +
+  geom_point() + 
+  geom_errorbar(aes(ymin = estimate + 1.96*std.error, 
+                    ymax = estimate - 1.96*std.error)) +
+  geom_hline(yintercept=0.182, colour="red", linetype="dashed") +
+  coord_flip()
+```
+This results in tigher confidence intervals, which is a good sign!
+
+
+## PuMBA
+
+Now, we would like to run PuMBA on this data. 
+
+
+This first requires making sure that the dummy variables work correctly. We'll make Region into a factor.
+
+```{r}
+pumba_modeldat <- nls_simres %>% 
+  mutate(Region = fct_inorder(Region)) %>% 
+  rename(
+    logK1 = logk1,
+    logVnd = logvnd,
+    logBPnd = logbpnd,
+    logBPp = logbpp,
+    logk4 = logk4) %>% 
+  rename(ID = WAYID)
+```
+
+
+Then we define our prior
+
+```{r}
+pumba_prior <- c(
+  set_prior("normal(-2.5, 0.25)", resp = "logK1"),
+  set_prior("normal(-1, 0.25)", resp = "logVnd"),
+  set_prior("normal( 1, 0.25)", resp = "logBPp"),
+  set_prior("normal(-4, 0.25)", resp = "logk4"),
+  
+  set_prior("normal(0, 0.3)", resp = "logK1", class = "sd", group="ID"),
+  set_prior("normal(0, 0.3)", resp = "logVnd", class = "sd", group="ID"),
+  set_prior("normal(0, 0.3)", resp = "logBPp", class = "sd", group="ID"),
+  set_prior("normal(0, 0.3)", resp = "logk4", class = "sd", group="ID"),
+  
+  set_prior("normal(0, 0.1)", resp = "logK1", class = "sigma"),
+  set_prior("normal(0, 0.1)", resp = "logVnd", class = "sigma"),
+  set_prior("normal(0, 0.1)", resp = "logBPp", class = "sigma"),
+  set_prior("normal(0, 0.1)", resp = "logk4", class = "sigma"),
+  
+  set_prior("normal(0, 0.1)", resp = "logVnd", class = "sd", group="Region"),
+  set_prior("normal(0, 0.1)", resp = "logk4", class = "sd", group="Region"),
+  
+  set_prior("normal(0, 0.3)", coef="Regionacn", resp="logK1"),
+  set_prior("normal(0, 0.3)", coef="Regionamy", resp="logK1"),
+  set_prior("normal(0, 0.3)", coef="Regioncin", resp="logK1"),
+  set_prior("normal(0, 0.3)", coef="Regionhip", resp="logK1"),
+  set_prior("normal(0, 0.3)", coef="Regionins", resp="logK1"),
+  set_prior("normal(0, 0.3)", coef="Regionmed", resp="logK1"),
+  set_prior("normal(0, 0.3)", coef="Regionpip", resp="logK1"),
+  set_prior("normal(0, 0.3)", coef="RegionWAY_rphelpscs_c", resp="logK1"),
+  
+  set_prior("normal(0, 0.3)", coef="Regionacn", resp="logBPp"),
+  set_prior("normal(0, 0.3)", coef="Regionamy", resp="logBPp"),
+  set_prior("normal(0, 0.3)", coef="Regioncin", resp="logBPp"),
+  set_prior("normal(0, 0.3)", coef="Regionhip", resp="logBPp"),
+  set_prior("normal(0, 0.3)", coef="Regionins", resp="logBPp"),
+  set_prior("normal(0, 0.3)", coef="Regionmed", resp="logBPp"),
+  set_prior("normal(0, 0.3)", coef="Regionpip", resp="logBPp"),
+  set_prior("normal(0, 0.3)", coef="RegionWAY_rphelpscs_c", 
+            resp="logBPp"),
+  
+  set_prior("normal(0, 0.2)", coef="GroupPatient", 
+            resp="logBPp"),
+
+  set_prior("lkj(1)", class="cor", group = "ID"),
+  set_prior("lkj(2)", class="cor", group = "Region"),
+  set_prior("lkj(2)", class="rescor"))
+
+```
+
+... and our formula
+
+```{r}
+bf_K1 <- bf(logK1 ~ Region + (1|k|ID), center = F)
+bf_Vnd <- bf(logVnd ~ 1 + (1|j|Region) + (1|k|ID), center = F)
+bf_BPp <- bf(logBPp ~ 1 + Region + Group + (1|k|ID), 
+              center = F)
+bf_k4 <- bf(logk4 ~ 1 + (1|j|Region) + (1|k|ID), center = F)
+
+pumba_formula <- brms::mvbrmsformula(bf_K1 + bf_Vnd + bf_BPp + bf_k4 + set_rescor(TRUE))
+```
+
+... and we can fit the model:
+
+```{r}
+pumba_fit <- brm(pumba_formula,
+    family=gaussian(),
+    data = pumba_modeldat,
+    prior = pumba_prior,
+    backend = "cmdstanr", 
+    inits = 0, cores=4, 
+    silent = 2, refresh=0)
+
+pumba_fit
+```
+
+
+
+
+## Comparison of estimates
+
+Now, let's just compare the model estimates and their 95% intervals from all the different tests.  First, I'll just extract the estimates and put them all together.  I'll also add the SiMBA results for comparison.
+
+```{r, fig.width=8}
+simcompare_t <- nls_simres_t_bpp %>% 
+  select(Region, estimate, conf.low, conf.high) %>% 
+  mutate(Parameter = "BPND") %>% 
+  mutate(Parameter = "BPP") %>% 
+  mutate(Test = paste0("t-test")) %>% 
+  rename(U95 = conf.low, L95 = conf.high) %>% # reversing because we
+                                              # multiplied by -1 earlier
+  mutate(SE = (U95 - estimate)/1.96 )
+
+simcompare_lme <- nls_simres_lme_bpp %>% 
+  filter(term == "GroupPatient") %>% 
+  mutate(Parameter = "BPP",
+         Region = "All Regions",
+         Test = paste0("LME"),
+         conf.low = estimate + 1.96*std.error,
+         conf.high = estimate - 1.96*std.error) %>%
+  select(Region, estimate, conf.low, conf.high, SE = std.error, 
+         Parameter, Test) %>% 
+  rename(L95 = conf.low, U95 = conf.high)
+  
+simcompare_pumba <- as_tibble(rstan::summary(pumba_fit$fit)$summary, 
+                           rownames = "Parameter") %>% 
+  filter(str_detect(Parameter, "GroupPatient")) %>% 
+  select(Parameter, estimate = mean, L95 = `2.5%`, U95 = `97.5%`, SE=sd) %>% 
+  mutate(Region = "All Regions", Parameter = "BPP", Test = "PuMBA")
+
+simbafit <- readRDS("../DerivedData/simdat_simbafit.rds")
+
+simcompare_simba <- as_tibble(rstan::summary(simbafit)$summary, 
+                           rownames = "Parameter") %>% 
+  filter(Parameter=="b_logBPnd[10]") %>% 
+  select(Parameter, estimate = mean, L95 = `2.5%`, U95 = `97.5%`, SE=sd) %>% 
+  mutate(Region = "All Regions", Parameter = "BPP", Test = "SiMBA")
+  
+simcompare <- bind_rows(simcompare_t, 
+                        simcompare_lme,
+                        simcompare_pumba,
+                        simcompare_simba) %>% 
+  mutate(Comparison = paste0(Test, ": ", Region)) %>% 
+  ungroup() %>% 
+  mutate(Test = fct_inorder(Test),
+         Comparison = fct_rev(fct_inorder(Comparison)))
+```
+Now let's plot the estimated group differences. Recall that the true value is 0.182, or 20%.
+
+```{r}
+ggplot(simcompare, aes(x=Comparison, y=estimate, colour=Test)) +
+  geom_point() + 
+  geom_errorbar(aes(ymin = L95, 
+                    ymax = U95), width=0.2) +
+  geom_hline(yintercept=0.182, colour="red", linetype="dashed") +
+  coord_flip() +
+  labs(
+    title = "Model Group Difference Summaries : Log Scale",
+    subtitle = "Difference Estimates and their 95% Confidence/Credible Intervals\nwith the true difference indicated by the dashed red line",
+    y="Estimate (log scale)", x="Test"
+  ) +
+  scale_colour_brewer(type="qual", palette = 2)
+```
+
+Let's also compare the standard errors, describing the precision of our estimates:
+
+```{r}
+ggplot(simcompare, aes(x=Comparison, y=SE, colour=Test)) +
+  geom_point(size=2.5, colour="black") + 
+  geom_point(size=2) + 
+  coord_flip() +
+  labs(
+    title = "Model Group Difference Standard Error",
+    subtitle = "Standard Error of Difference Estimates: Lower is More Precise",
+    y="Standard Error of the log-scale Estimates", x="Test"
+  ) +
+  scale_colour_brewer(type="qual", palette = 2)
+```
+
+Note that while SiMBA does outperform PuMBA, it is approximately 4000 times slower to estimate, restricted to the two-tissue compartment model, and requires defining more priors.
+
+
+# Other Models
+
+Having shown how PuMBA can be applied to data originating from the 2TC above, here I will show how PuMBA can be applied to data originating from other models: the one-tissue compartment model and the simplified reference tissue model.  In both cases, I will model the data using both PuMBA and LME for comparison.  Look for the row with `GroupPatient` to see the estimated difference, and compare the standard error between the two methods: for PuMBA, it is listed under `Est.Error` and for LME, it is `Std.Error`.
+
+## SRTM: [11C]DASB
+
+```{r}
+srtm_modeldat <- readRDS("../RawData/DASB_SRTM_pars.rds")
+
+head(srtm_modeldat)
+```
+
+This is a dataset of simulated parameters from a set of subjects belonging to a control and patient group, representing [11C]DASB data.  There is a difference of 0.1 in logBP~ND~ between the patients and the controls.
+
+```{r}
+ggplot(srtm_modeldat, aes(x=Group, y=logBPnd, colour=Group)) +
+  geom_beeswarm(cex = 3) +
+  facet_wrap(~Region)
+```
+
+Now let's model this with PuMBA
+
+```{r}
+bf_R1 <- bf(logR1 ~ 1 + Region + (1|k|ID), center = F)
+bf_k2prime <- bf(logk2prime ~ 1 + (1|j|Region) + (1|k|ID), center = F)
+bf_BPnd <- bf(logBPnd ~  1 + Region + Group + (1|k|ID))
+```
+
+
+```{r}
+
+pumba_srtm_prior <- c(
+  set_prior("normal( 0, 0.25)", resp = "logR1"),
+  set_prior("normal(-3, 0.25)", resp = "logk2prime"),
+  set_prior("normal(-1, 0.25)", resp = "logBPnd"),
+  
+  set_prior("normal(0, 0.3)", resp = "logR1", class = "sd", group="ID"),
+  set_prior("normal(0, 0.3)", resp = "logk2prime", class = "sd", group="ID"),
+  set_prior("normal(0, 0.3)", resp = "logBPnd", class = "sd", group="ID"),
+  
+  set_prior("normal(0, 0.1)", resp = "logk2prime", class = "sd", group="Region"),
+  
+  set_prior("normal(0, 0.3)", coef="Regionamy",     resp="logR1"),
+  set_prior("normal(0, 0.3)", coef="Regioncin",     resp="logR1"),
+  set_prior("normal(0, 0.3)", coef="Regiondpu",     resp="logR1"),
+  set_prior("normal(0, 0.3)", coef="Regionhip",     resp="logR1"),
+  set_prior("normal(0, 0.3)", coef="Regionins",     resp="logR1"),
+  set_prior("normal(0, 0.3)", coef="Regionmidcs_c", resp="logR1"),
+  set_prior("normal(0, 0.3)", coef="Regiontha",     resp="logR1"),
+  set_prior("normal(0, 0.3)", coef="Regionvst",     resp="logR1"),
+
+  set_prior("normal(1, 0.3)", coef="Regionamy",     resp="logBPnd"),
+  set_prior("normal(0, 0.3)", coef="Regioncin",     resp="logBPnd"),
+  set_prior("normal(1, 0.3)", coef="Regiondpu",     resp="logBPnd"),
+  set_prior("normal(0, 0.3)", coef="Regionhip",     resp="logBPnd"),
+  set_prior("normal(0.5, 0.3)", coef="Regionins",     resp="logBPnd"),
+  set_prior("normal(1.5, 0.3)", coef="Regionmidcs_c",   resp="logBPnd"),
+  set_prior("normal(1, 0.3)", coef="Regiontha",     resp="logBPnd"),
+  set_prior("normal(1, 0.3)", coef="Regionvst",     resp="logBPnd"),
+  
+  set_prior("normal(0, 0.2)", coef="GroupPatient",     resp="logBPnd"),
+  
+  set_prior("normal(0, 0.1)", resp = "logR1", class = "sigma"),
+  set_prior("normal(0, 0.1)", resp = "logk2prime", class = "sigma"),
+  set_prior("normal(0, 0.1)", resp = "logBPnd", class = "sigma"),
+  
+  set_prior("lkj(1)", class="cor", group = "ID"),
+  set_prior("lkj(2)", class="rescor"))
+
+
+pumba_srtm <- brms::brm(formula = bf_R1 + bf_k2prime + bf_BPnd + set_rescor(TRUE), 
+          data = srtm_modeldat, 
+          family = gaussian(), 
+          prior = pumba_srtm_prior, 
+          cores=4,
+          silent = 2, refresh=0, seed = 42)
+
+pumba_srtm
+```
+
+And here is the LME model for comparison.
+
+```{r}
+summary(lmer(logBPnd ~  1 + Region + Group + (1|ID), data=srtm_modeldat))
+```
+
+
+## 1TC: [11C]GR103545
+
+```{r}
+onetc_modeldat <- readRDS("../RawData/GR_1TC_pars.rds") %>% 
+  mutate(Region = relevel(as.factor(Region), ref = "dor"))
+
+head(onetc_modeldat)
+```
+
+This is a dataset of simulated parameters from a set of subjects belonging to a control and patient group, representing [11C]GR103545 data.  There is a difference of 0.1 in logV~T~ between the patients and the controls.
+
+```{r}
+ggplot(onetc_modeldat, aes(x=Group, y=logVt, colour=Group)) +
+  geom_beeswarm(cex = 3) +
+  facet_wrap(~Region)
+```
+
+Now let's model this with PuMBA
+
+```{r}
+bf_K1 <- bf(logK1 ~ 1 + Region + (1|k|ID), center = F)
+bf_Vt <- bf(logVt ~ 1 + Region + Group + (1|k|ID), center = F)
+```
+
+
+```{r}
+pumba_onetc_prior <- c(
+  set_prior("normal(-2, 0.25)", resp = "logK1", coef="Intercept", class="b"),
+  set_prior("normal(3, 0.25)", resp = "logVt", coef="Intercept", class="b"),
+  
+  set_prior("normal(0, 0.3)", resp = "logK1", class = "sd", group="ID"),
+  set_prior("normal(0, 0.3)", resp = "logVt", class = "sd", group="ID"),
+  
+  set_prior("normal(0, 0.1)", resp = "logK1", class = "sigma"),
+  set_prior("normal(0, 0.1)", resp = "logVt", class = "sigma"),
+  
+  set_prior("normal(0, 0.3)", coef="Regionamy",         resp="logK1"),
+  set_prior("normal(0, 0.3)", coef="Regiondpu",         resp="logK1"),
+  set_prior("normal(0, 0.3)", coef="Regionhip",         resp="logK1"),
+  set_prior("normal(0, 0.3)", coef="Regionins",         resp="logK1"),
+  set_prior("normal(0, 0.3)", coef="Regionmed",         resp="logK1"),
+  set_prior("normal(0, 0.3)", coef="Regionpip",         resp="logK1"),
+  set_prior("normal(0, 0.3)", coef="Regionraphe_t_all", resp="logK1"),
+  set_prior("normal(0, 0.3)", coef="Regionvst",         resp="logK1"),
+
+  set_prior("normal(0, 0.3)", coef="Regionamy",         resp="logVt"),
+  set_prior("normal(0, 0.3)", coef="Regiondpu",         resp="logVt"),
+  set_prior("normal(0, 0.3)", coef="Regionhip",         resp="logVt"),
+  set_prior("normal(0, 0.3)", coef="Regionins",         resp="logVt"),
+  set_prior("normal(0, 0.3)", coef="Regionmed",         resp="logVt"),
+  set_prior("normal(0, 0.3)", coef="Regionpip",         resp="logVt"),
+  set_prior("normal(0, 0.3)", coef="Regionraphe_t_all", resp="logVt"),
+  set_prior("normal(0, 0.3)", coef="Regionvst",         resp="logVt"),
+
+  set_prior("normal(0, 0.2)", coef="GroupPatient", resp="logVt"),
+  
+  set_prior("lkj(1)", class="cor", group = "ID"),
+  set_prior("lkj(2)", class="rescor"))
+
+
+pumba_1tc <- brms::brm(formula = bf_K1 + bf_Vt + set_rescor(TRUE), 
+          data = onetc_modeldat, 
+          family = gaussian(), 
+          prior = pumba_onetc_prior, 
+          cores=4,
+          silent = 2, refresh=0, seed = 42)
+
+pumba_1tc
+```
+
+And here is the LME model for comparison.
+
+```{r}
+summary(lmer(logVt ~  1 + Region + Group + (1|ID), data=onetc_modeldat))
+```
+
